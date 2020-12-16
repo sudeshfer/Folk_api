@@ -240,7 +240,7 @@ module.exports = {
             limitString,
         ];
 
-        postSchemaModel.aggregate(aggregateString).then(async function(posts) {
+        userSchemaModel.aggregate(aggregateString).then(async function(posts) {
             //some code here
 
             if (posts.length === 0) {
