@@ -210,9 +210,12 @@ module.exports = {
 
     getMaybeLikeUser: async(req, res) => {
         let results = {};
-        const { user_id, lat, long, maxDistance } = req.body;
+        const { user_id, lat, long, maxDistance,page } = req.body;
 
+        const page_as_int = parseInt(page);
         const limit = parseInt('10');
+        const startIndex = (page_as_int - 1) * limit;
+        const endIndex = page_as_int * limit;
 
         var followMatchString = {
             "$match": { "usersFollowed": { "$nin": [mongoose.Types.ObjectId(user_id)] } }
@@ -232,12 +235,14 @@ module.exports = {
         };
 
         var limitString = { "$limit": limit };
+        var skipString = { "$skip": startIndex };
 
         var aggregateString = [
             geoString,
             followMatchString,
             reqMatchString,
             limitString,
+            skipString,
         ];
 
         userSchemaModel.aggregate(aggregateString).then(async function(posts) {
@@ -248,6 +253,32 @@ module.exports = {
                 results.data = 'No posts ';
                 res.send(results);
             } else {
+
+                let totalCount = await userSchemaModel.countDocuments().exec();
+                if (endIndex < totalCount) {
+                    results.next = {
+                        page: page_as_int + 1,
+                        limit: limit
+                    };
+                }
+
+                if (startIndex > 0) {
+                    results.previous = {
+                        page: page_as_int - 1,
+                        limit: limit
+                    };
+                }
+
+                posts.forEach((post) => {
+                    post.isUserFollowed = post.usersFollowed.some(id => id.equals(user_id))
+                });
+
+                posts.forEach((post) => {
+                    post.isUserRequested = post.usersRequested.some(id => id.equals(user_id))
+                });
+
+                // console.log(posts[0].isUserRequested);
+
                 res.send({ error: false, data: posts });
             }
         });
