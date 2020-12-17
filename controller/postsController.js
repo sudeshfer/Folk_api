@@ -278,6 +278,7 @@ module.exports = {
                 "usersLiked": 1,
                 'exp_date': 1,
                 "has_img": 1,
+                "room_id": 1,
                 "user_id": {
                     "img": "$user_id.img",
                     "_id": "$user_id._id",
